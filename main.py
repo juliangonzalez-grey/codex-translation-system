@@ -1,33 +1,45 @@
 #Import dependencies
-from neo4j import GraphDatabase     # Python driver from Neo4j
-import os                           # Used to access enviormental variables
-from dotenv import load_dotenv      # Imports variables from .env file
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse
+import uvicorn 
+from neo4j_driver import create_translation, get_translation_data, driver
 
-# Load enviorment variables from .env file
-load_dotenv()
 
-# Get Neo4j connection info
-uri = os.getenv("NEO4J_URI")
-user = os.getenv("NEO4J_USER")
-password = os.getenv("NEO4J_PASSWORD")
+# Create the FastAPI app instance 
+app = FastAPI(title="Codex Translation API Demo")
 
-# Connect to Neo4j
-driver = GraphDatabase.driver(uri, auth=(user, password))
+@app.get("/status")
+def status():
+    return {"status": "API running and connected to Neo4j"}
 
-# Create or update medication translation nodes
-def create_translation(session, canonical, brand, country, lang_code, lang_name, translation):
-    query = """
-    MERGE (t:Term {canonical:$canonical, type:'medication'})
-    MERGE (b:Brand {name:$brand})-[:BRAND_OF]->(t)
-    MERGE (c:Country {iso2:$country, name:$country})
-    MERGE (b)-[:SOLD_IN]->(c)
-    MERGE (l:Language {code:$lang_code, name:$lang_name})
-    MERGE (tr:Translation {text:$translation, verified:true})
-    MERGE (tr)-[:OF_TERM]->(t)
-    MERGE (tr)-[:IN_LANGUAGE]->(l)
-    """
-    session.run(query, canonical=canonical, brand=brand, country=country, lang_code=lang_code, lang_name=lang_name, translation=translation)
-    print(f"Added {canonical} → {translation} ({lang_name}) / Brand: {brand} in {country}")
+@app.post("/demo_data")
+def load_demo_data():
+    with driver.session() as session:
+        create_translation(session, "Paracetamol", "Panadol", "NG", "en", "English", "paracetamol")
+        create_translation(session, "Ibuprofen", "Advil", "US", "en", "English", "ibuprofen")
+        create_translation(session, "Ibuprofen", "Brufen", "FR", "fr", "French", "ibuprofène")
+    return {"status": "Demo data added"}
+
+@app.post("/translate/{term}")
+def translate(term: str, lang: str = None, country: str = None):
+    with driver.session() as session:
+        records = get_translation_data(session, term, lang, country)
+        if not records:
+            raise HTTPException(status_code=404, detail=f"No translation found for '{term}'")
+        response = []
+        for r in records:
+            response.append({
+                "term": term,
+                "translation": r["translation"],
+                "language": r["language"],
+                "brand": r["brand"],
+                "country": r["country"]
+            })
+        return JSONResponse(content=response)
+    
+if __name__ == "__main__":
+    uvicorn.run(app, host="127.0.0.1", port=8000)
+
 
 # Query translations for a medication term
 def get_translations(session, canonical):
@@ -62,17 +74,17 @@ def get_full_term_info(session, canonical):
             if b: print(f" - {b}")
 
 # Main program
-with driver.session() as session:
+#with driver.session() as session:
     #create_translation(session, "ibuprofen","ibuprofène", "ibuprofeno")
     #create_translation(session, "acetaminophen", "paracétamol", "paracetamol")
     #create_translation(session, "aspirin", "aspirine", "aspirina")
 
     #get_translations(session, "acetaminophen")
     #create_translation(session, "Paracetamol", "Panadol", "NG", "en", "English", "paracetamol")
-    get_full_term_info(session, "Paracetamol")
-    get_translations(session, "Paracetamol")
+    #get_full_term_info(session, "Paracetamol")
+    #get_translations(session, "Paracetamol")
     
 # Close connection
-driver.close()
+#driver.close()
 
 
