@@ -7,3 +7,7 @@ load_demo_data()
 
 print("\nTranslate Ibuprofen with filter lang")
 print(translate("Ibuprofen", lang="en"))
+
+# Testing fuzzy matching 
+print("\nTranslate ibiprofan with filter lang, with fuzzy matching")
+print(translate("ibiprofan", lang="en"))

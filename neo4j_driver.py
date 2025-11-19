@@ -36,7 +36,8 @@ def create_translation(session, canonical, brand, country, lang_code, lang_name,
 # Retrieves all translations and related info for a given term
 def get_translation_data(session, canonical, lang=None, country=None):
     query = """
-    MATCH (t:Term {canonical:$canonical})
+    MATCH (t:Term)
+    WHERE (apoc.text.jaroWinklerDistance(t.canonical, $canonical) < 0.75)
     MATCH (tr:Translation)-[:OF_TERM]->(t)
     MATCH (tr)-[:IN_LANGUAGE]->(l:Language)
     OPTIONAL MATCH (tr)-[:HAS_BRAND]->(b:Brand)
