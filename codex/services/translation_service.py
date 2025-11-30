@@ -1,5 +1,5 @@
 # Import dependencies
-from neo4j_driver import create_translation, get_translation_data, find_missing_translations, find_missing_brands, get_equivalent_brands, driver
+from codex.neo4j_driver import create_translation, get_translation_data, find_missing_translations, find_missing_brands, get_equivalent_brands, driver
 import json
 
 # Loads sample translation data into the Neo4j database

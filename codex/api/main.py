@@ -1,6 +1,6 @@
 # Import dependencies                                                             
-from translate_service import load_demo_data, translate, sync_translation_data, load_language_pack
-from neo4j_driver import find_missing_translations, find_missing_brands, get_equivalent_brands, resolve_to_base_term, driver
+from codex.services.translation_service import load_demo_data, translate, sync_translation_data, load_language_pack
+from codex.neo4j_driver import find_missing_translations, find_missing_brands, get_equivalent_brands, resolve_to_base_term, driver
 
 # Testing data
 # print("\nLoading data")
