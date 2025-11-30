@@ -1,6 +1,6 @@
 # Import dependencies                                                             
 from translate_service import load_demo_data, translate, sync_translation_data, load_language_pack
-from neo4j_driver import find_missing_translations, find_missing_brands, get_equivalent_brands, driver
+from neo4j_driver import find_missing_translations, find_missing_brands, get_equivalent_brands, resolve_to_base_term, driver
 
 # Testing data
 # print("\nLoading data")
@@ -34,14 +34,18 @@ while True:
     print("\n Translation Results")
     if not results:
         print("No translations found.")
-        no_translation_flag = True
-    else:
-        for r in results:
-            print(f"- {r['translation']} ({r['language']}) | Brand: {r['brand']} | Country: {r['country']}")
+        continue
+    for r in results:
+        print(f"- {r['translation']} ({r['language']}) | Brand: {r['brand']} | Country: {r['country']}")
             
-    if(no_translation_flag != True):
-        test_more = input("\nRun full anaylsis on this term? (y/n): ")
+    for r in results:
+        translated_term = r["translation"]
+        test_more = input(f"\nRun full anaylsis on '{translated_term}'? (y/n): ")
         if test_more.lower() == "y":
-            sync_translation_data(term)
+            with driver.session() as session:
+                base = resolve_to_base_term(session, translated_term)
+                #print(f"\nChecking canonical term: {base} (input was '{translated_term}')\n")
+                print(f"\nChecking term: {translated_term}\n")
+                sync_translation_data(base)
         else:
             break
