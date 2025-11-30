@@ -50,7 +50,7 @@ def translate(term: str, lang: str = None, country: str = None):
 # Prints equivalent brands across countries
 def sync_translation_data(term: str):
     with driver.session() as session:
-        print(f"Checking term: {term}\n")
+        #print(f"Checking term: {term}\n")
 
         missing_translations = find_missing_translations(session, term)
         print("Missing Translations: ")

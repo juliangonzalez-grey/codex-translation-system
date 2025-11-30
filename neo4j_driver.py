@@ -141,3 +141,16 @@ def get_equivalent_brands(session, term):
     """
     return list(session.run(query, term=term))
 
+def resolve_to_base_term(session, term): 
+    query = """
+    MATCH (t:Term)
+    WHERE t.canonical = $term
+    RETURN t.canonical AS base
+    UNION
+    MATCH (t:Term)<-[:OF_TERM]-(tr:Translation)
+    WHERE tr.text = $term
+    RETURN t.canonical AS base
+    """
+
+    result = session.run(query, term=term).single()
+    return result["base"] if result else term
