@@ -1,6 +1,20 @@
 # Import dependencies
-from codex.neo4j_driver import create_translation, get_translation_data, find_missing_translations, find_missing_brands, get_equivalent_brands, driver
+from codex.neo4j_driver import create_translation, get_translation_data, find_missing_translations, find_missing_brands, get_equivalent_brands, language_exists, resolve_to_base_term, driver
 import json
+import os
+
+# Language fallback map from JSON file
+CONFIG_PATH = os.path.abspath(
+    os.path.join(
+        os.path.dirname(__file__),
+        "..",
+        "config",
+        "fallbacks.json"
+    )
+)
+
+with open(CONFIG_PATH, "r") as f:
+    FALLBACK_LANGUAGES = json.load(f)
 
 # Loads sample translation data into the Neo4j database
 def load_demo_data():
@@ -31,20 +45,104 @@ def load_demo_data():
 
 # Retrieve all translations for a given term, including brand, country, and language information
 def translate(term: str, lang: str = None, country: str = None):
+    term = term.strip().lower()
+
     with driver.session() as session:
-        records = get_translation_data(session, term, lang, country) 
-        if not records:
-            return None
-        return [
-            {
-                "term": term,
-                "translation": r["translation"],
-                "language": r["language"],
-                "brand": r["brand"],
-                "country": r["country"]
+
+        canonical = resolve_to_base_term(session, term)
+        if canonical:
+            term = canonical.lower()
+    
+        # Tries requested language first
+        if lang: 
+            direct = get_translation_data(session, term, lang, country)
+            if direct:
+                return{
+                    "canonical": term,
+                    "requested_language": lang, 
+                    "used_language": lang,
+                    "fallback_used": False,
+                    "results":[
+                        {
+                            "term": term,
+                            "translation": r["translation"],
+                            "language": r["language"],
+                            "brand": r["brand"],
+                            "country": r["country"]
+                        }
+                        for r in direct
+                    ]
+                }
+    
+        # Tries fall back languages (from JSON config)
+        if lang:
+            fallback_list = FALLBACK_LANGUAGES.get(lang, [])
+
+            for fb_lang in fallback_list:
+                fb_records = get_translation_data(session, term, fb_lang, country)
+                if fb_records:
+                    return{
+                        "canonical": term, 
+                        "requested_language": lang,
+                        "used_language": fb_lang,
+                        "fallback_used": True,
+                        "fallback_type": "regional",
+                        "fallback_chain": fallback_list,
+                        "results": [
+                            {
+                                "term": term,
+                                "translation": r["translation"],
+                                "language": r["language"],
+                                "brand": r["brand"],
+                                "country": r["country"]
+                            }
+                            for r in fb_records
+                        ]
+                    }
+        
+        # Universal fallback to English
+        english_records = get_translation_data(session, term, "en", country)
+        if english_records:
+            return {
+                "canonical": term,
+                "requested_language": lang,
+                "used_language": "en",
+                "fallback_used": True,
+                "fallback_type": "global_english",
+                "fallback_chain": ["en"],
+                "results": [
+                    {
+                        "term": term,
+                        "translation": r["translation"],
+                        "language": r["language"],
+                        "brand": r["brand"],
+                        "country": r["country"]
+                    }
+                    for r in english_records
+                ]
             }
-            for r in records
-        ]
+        
+        # Nothing found anywhere
+
+        # Check if the language pack is missing from DB
+        lang_missing = (lang is not None and not language_exists(lang))
+        return {
+            "canonical": term,
+            "requested_language": lang,
+            "used_language": None,
+            "missing_language_pack": lang_missing,
+            "results": [],
+            "error": (
+                f"No translations found. The language '{lang}' is not installed. "
+                "You may need to download or load a language pack."
+                if lang_missing
+                else "No translations found in requested, fallback, or English."
+
+            )
+        }
+
+
+
 
 # Quality check to find missing translations and brand names
 # Prints equivalent brands across countries

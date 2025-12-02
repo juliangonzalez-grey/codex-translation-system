@@ -150,7 +150,24 @@ def resolve_to_base_term(session, term):
     MATCH (t:Term)<-[:OF_TERM]-(tr:Translation)
     WHERE tr.text = $term
     RETURN t.canonical AS base
+    UNION
+    MATCH (t:Term)
+    WHERE apoc.text.jaroWinklerDistance(toLower(t.canonical), toLower($term)) < 0.20
+    RETURN t.canonical AS base
+    UNION
+    MATCH (t:Term)<-[:OF_TERM]-(tr:Translation)
+    WHERE apoc.text.jaroWinklerDistance(toLower(tr.text), toLower($term)) < 0.20
+    RETURN t.canonical AS base
+    
     """
 
     result = session.run(query, term=term).single()
     return result["base"] if result else term
+
+def language_exists(lang_code: str) -> bool:
+    with driver.session() as session:
+        result = session.run(
+            "MATCH (l:Language {code:$code}) RETURN l LIMIT 1",
+            code=lang_code
+        ).single()
+        return result is not None
