@@ -83,6 +83,11 @@
                 {"translation": "aspirine", "country": "BE", "brand": "Aspirine" },
                 {"translation": "aspirine", "country": "CA", "brand": "Aspirine" }
             ]
+        },
+        {
+            "canonical": "Albuterol",
+            "entries": [
+            ]
         }
     ]
 }

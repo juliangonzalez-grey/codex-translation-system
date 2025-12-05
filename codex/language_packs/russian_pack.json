@@ -57,6 +57,12 @@
             "entries": [
                 {"translation": "Аспирин", "country": "RU", "brand": "Аспирин"}
             ]
+        },
+        {
+            "canonical": "Albuterol",
+            "entries": [
+                {"translation": "Альбутерол", "country": "RU", "brand": "Вентолин"}
+            ]
         }
     ]
 }
