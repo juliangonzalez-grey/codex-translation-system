@@ -16,14 +16,21 @@ Use the left panel to input a medical term, target language and country, or impo
             """)
 
 # lists for the select boxes
-langlist = ["", "en", "es", "fr", "ru", "uk", "de", "it", "pt"]
-countrylist = ["", "US", "MX","GB", "FR", "ES", "RU", "IT", "DE", "PT"]
+langlist = ["", "en", "es", "fr", "ru", "uk", "pt", "pl"]
+countrylist = ["", "US", "MX", "GB", "FR", "ES", "RU", "UA", "PL", "CA"]
 
 st.sidebar.header("Translation Controls")
 term = st.sidebar.text_input("Enter a medication")
+if term.strip() == "":
+    st.sidebar.warning = ("Please enter a medication name")
+
 lang = st.sidebar.selectbox("Target language", langlist)
 country = st.sidebar.selectbox("Target country", countrylist)
-translate_button = st.sidebar.button("Translate")
+
+translate_button = st.sidebar.button(
+    "Translate",
+    disabled=term.strip() == ""
+    )
 
 st.sidebar.markdown("### Language Pack Loader")
 
@@ -75,37 +82,40 @@ if st.session_state["current_translation"]:
         for r in entry["results"]:
             st.write(f"- **{r['translation']}** ({r['language']}) | Brand: {r['brand']} | Country: {r['country']}")
 
+current_translation = st.session_state.get("current_translation")
+if current_translation and current_translation.get("results"):
 
-# same function as translation_service.py but altered it for streamlit
-full_analysis = st.button(f"Run full analysis on '{term}'?")
-if full_analysis and term != "":
-    with driver.session() as session:
-        base_term = resolve_to_base_term(session, term)
-        st.write(f"Running full analysis on: **{term}**")
+    # same function as translation_service.py but altered it for streamlit
+    full_analysis = st.button(f"Run full analysis on '{current_translation['term']}'?")
 
-        # Missing translations
-        missing_translations = find_missing_translations(session, base_term)
-        st.subheader("Missing Translations")
-        if missing_translations:
-            for m in missing_translations:
-                st.write(f" - {m['country']} ({m['country_name']}) → {m['reason']}")
-        else:
-            st.success("All translations present")
+    if full_analysis and st.session_state["current_translation"]:
+        with driver.session() as session:
+            base_term = resolve_to_base_term(session, current_translation["term"])
+            st.write(f"Running full analysis on: **{current_translation['term']}**")
 
-        # Missing brands
-        missing_brands = find_missing_brands(session, base_term)
-        st.subheader("Missing Brand Names")
-        if missing_brands:
-            for m in missing_brands:
-                st.write(f" - {m['country']} ({m['country_name']}) → {m['reason']}")
-        else:
-            st.success("All brand names present")
+            # Missing translations
+            missing_translations = find_missing_translations(session, base_term)
+            st.subheader("Missing Translations")
+            if missing_translations:
+                for m in missing_translations:
+                    st.write(f" - {m['country']} ({m['country_name']}) → {m['reason']}")
+            else:
+                st.success("All translations present")
 
-        # Equivalent brands
-        equivalents = get_equivalent_brands(session, base_term)
-        st.subheader("Equivalent Brands Across Countries")
-        if equivalents:
-            for e in equivalents:
-                st.write(f" - {e['brand']} ({e['country']} / {e['country_name']})")
-        else:
-            st.info("No equivalent brands found")
+            # Missing brands
+            missing_brands = find_missing_brands(session, base_term)
+            st.subheader("Missing Brand Names")
+            if missing_brands:
+                for m in missing_brands:
+                    st.write(f" - {m['country']} ({m['country_name']}) → {m['reason']}")
+            else:
+                st.success("All brand names present")
+
+            # Equivalent brands
+            equivalents = get_equivalent_brands(session, base_term)
+            st.subheader("Equivalent Brands Across Countries")
+            if equivalents:
+                for e in equivalents:
+                    st.write(f" - {e['brand']} ({e['country']} / {e['country_name']})")
+            else:
+                st.info("No equivalent brands found")

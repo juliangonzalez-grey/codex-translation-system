@@ -67,6 +67,30 @@
         { "translation": "omeprazole", "country": "GB", "brand": "Losec" },
         { "translation": "omeprazole", "country": "CA", "brand": "Losec" }
       ]
-    }
+    },
+        {
+            "canonical": "Aspirin",
+            "entries": [
+                {"translation": "aspirin", "country": "US", "brand": "Bayer" },
+                {"translation": "aspirin", "country": "GB", "brand": "Aspirin" },
+                {"translation": "aspirin", "country": "CA", "brand": "Aspirin" }
+            ]
+        },
+        {
+            "canonical": "Metformin",
+            "entries": [
+                {"translation": "metformin", "country": "US", "brand": "Glucophage" },
+                {"translation": "metformin", "country": "GB", "brand": "Glucophage" },
+                {"translation": "metformin", "country": "CA", "brand": "Glucophage" }
+            ]
+        },
+        {
+            "canonical": "Albuterol",
+            "entries": [
+                {"translation": "albuterol", "country": "US", "brand": "Ventolin" },
+                {"translation": "salbutamol", "country": "GB", "brand": "Ventolin" },
+                {"translation": "salbutamol", "country": "CA", "brand": "Ventolin" }
+            ]
+        }
   ]
 }
