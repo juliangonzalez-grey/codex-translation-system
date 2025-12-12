@@ -53,13 +53,14 @@ if translate_button and term:
         results = translate(term, lang=lang or None, country=country or None)
     
         st.session_state["current_translation"] = {
-            "term": term,
+            "input_term": term,
+            "canonical": results.get("canonical"),
             "lang": lang,
             "country": country,
             "results": results.get("results", []),
         }
 
-        st.write(f"**Term:** {term}  |  **Requested Language:** {lang}  |  **Selected Country:** {country}")
+        st.write(f"**Term:** {results.get('canonical')}  |  **Requested Language:** {lang}  |  **Selected Country:** {country}")
 
         if results.get("fallback_used"):
             st.warning("Fallback Activated")
@@ -74,24 +75,30 @@ if translate_button and term:
     except Exception as e:
         st.error(f"Translation failed: {e}")
 
-if st.session_state["current_translation"]:
-    entry = st.session_state["current_translation"]
-    st.write(f"**Term:** {entry['term']}  |  **Requested Language:** {entry['lang']}  |  **Selected Country:** {entry['country']}")
-    
-    if entry["results"]:
-        for r in entry["results"]:
-            st.write(f"- **{r['translation']}** ({r['language']}) | Brand: {r['brand']} | Country: {r['country']}")
 
-current_translation = st.session_state.get("current_translation")
-if current_translation and current_translation.get("results"):
+current = st.session_state.get("current_translation")
+
+if current and current["results"]:
+    entry = st.session_state["current_translation"]
+    st.subheader("Translated terms")
+    for r in entry["results"]:
+        st.write(f"- **{r['translation']}** ({r['language']}) | Brand: {r['brand']} | Country: {r['country']}")
+
+if current and current["results"]:
+    translated_terms = [r["translation"] for r in current["results"]]
+
+    selected_translation = st.selectbox( "Select translated term for full analysis", translated_terms)
+
+    run_analysis = st.button(
+        f"Run full analysis on '{selected_translation}'"
+    )
 
     # same function as translation_service.py but altered it for streamlit
-    full_analysis = st.button(f"Run full analysis on '{current_translation['term']}'?")
 
-    if full_analysis and st.session_state["current_translation"]:
+    if run_analysis:
         with driver.session() as session:
-            base_term = resolve_to_base_term(session, current_translation["term"])
-            st.write(f"Running full analysis on: **{current_translation['term']}**")
+            base_term = resolve_to_base_term(session, selected_translation)
+            st.write(f"Running full analysis on: **{selected_translation}**")
 
             # Missing translations
             missing_translations = find_missing_translations(session, base_term)
