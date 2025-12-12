@@ -1,7 +1,7 @@
 # Import dependencies
 from neo4j import GraphDatabase       # Python driver from Neo4j
-from dotenv import load_dotenv        # Used to access enviormental variables
-import os                             # Imports variables from .env file
+from dotenv import load_dotenv        # Loads environment variables from .env file
+import os                             # Access to OS environment variables
 
 # Loads environment varibles 
 load_dotenv()
@@ -14,10 +14,12 @@ password = os.getenv("NEO4J_PASSWORD")
 # Connect to Neo4j
 driver = GraphDatabase.driver(uri, auth=(user, password))
 
-# Create or update medication translation nodes
-def create_translation(session, canonical, brand, country, lang_code, lang_name, translation):
+# Create or update translation nodes for any medical term (medication and symtom)
+def create_translation(session, canonical, brand, country, lang_code, lang_name, translation, term_type="medication"):
+
+    # Core translation structure
     query = """
-    MERGE (t:Term {canonical:$canonical, type:'medication'})
+    MERGE (t:Term {canonical:$canonical, type:$term_type})
     MERGE (l:Language {code:$lang_code, name:$lang_name})
     MERGE (tr:Translation {text:$translation, country:$country})
     MERGE (tr)-[:OF_TERM]->(t)
@@ -26,7 +28,7 @@ def create_translation(session, canonical, brand, country, lang_code, lang_name,
     MERGE (tr)-[:USED_IN]->(c)
     """
 
-    session.run(query, canonical=canonical, country=country, lang_code=lang_code, lang_name=lang_name, translation=translation)
+    session.run(query, canonical=canonical, country=country, lang_code=lang_code, lang_name=lang_name, translation=translation, term_type=term_type)
 
     # If there's no brand for term from a country
     if brand is not None:
@@ -141,6 +143,7 @@ def get_equivalent_brands(session, term):
     """
     return list(session.run(query, term=term))
 
+# Resolves any input (canonical, translated, or fuzzy) to a base canonical term
 def resolve_to_base_term(session, term): 
     query = """
     MATCH (t:Term)
@@ -164,6 +167,7 @@ def resolve_to_base_term(session, term):
     result = session.run(query, term=term).single()
     return result["base"] if result else term
 
+# Checks whether a language pack exists in the database
 def language_exists(lang_code: str) -> bool:
     with driver.session() as session:
         result = session.run(
@@ -171,3 +175,21 @@ def language_exists(lang_code: str) -> bool:
             code=lang_code
         ).single()
         return result is not None
+
+# Retrieves all brands associated with a term across countries
+def get_brands_for_term(session, term):
+    query = """
+    MATCH (t:Term)
+    WHERE t.canonical = $term
+        OR apoc.text.jaroWinklerDistance(toLower(t.canonical), toLower($term)) < 0.20
+    MATCH (tr:Translation)-[:OF_TERM]->(t)
+    MATCH (tr)-[:HAS_BRAND]->(b:Brand)
+    MATCH (b)-[:SOLD_IN]->(c:Country)
+    RETURN DISTINCT
+        b.name AS brand,
+        c.iso2 AS country,
+        c.name AS country_name
+    ORDER BY country
+    """
+
+    return list(session.run(query, term=term))

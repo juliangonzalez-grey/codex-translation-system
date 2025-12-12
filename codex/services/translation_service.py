@@ -3,7 +3,7 @@ from codex.neo4j_driver import create_translation, get_translation_data, find_mi
 import json
 import os
 
-# Language fallback map from JSON file
+# Load language fallback rules from JSON configuration
 CONFIG_PATH = os.path.abspath(
     os.path.join(
         os.path.dirname(__file__),
@@ -17,6 +17,7 @@ with open(CONFIG_PATH, "r") as f:
     FALLBACK_LANGUAGES = json.load(f)
 
 # Loads sample translation data into the Neo4j database
+# Used for testing, demos, and development
 def load_demo_data():
     with driver.session() as session:
         # Ibuprofen
@@ -43,12 +44,16 @@ def load_demo_data():
 
     return {"status": "Demo data added"}
 
-# Retrieve all translations for a given term, including brand, country, and language information
+# Translates a medical term using:
+# 1. Requested language
+# 2. Configured fallback languages
+# 3. Universal English fallback
 def translate(term: str, lang: str = None, country: str = None):
+    # Normalize input
     term = term.strip().lower()
 
     with driver.session() as session:
-
+        # Resolve user input (canonical, translated, or fuzzy) to base term
         canonical = resolve_to_base_term(session, term)
         if canonical:
             term = canonical.lower()
@@ -142,10 +147,10 @@ def translate(term: str, lang: str = None, country: str = None):
         }
 
 
-
-
-# Quality check to find missing translations and brand names
-# Prints equivalent brands across countries
+# Performs a quality audit on a term:
+# - Missing translations
+# - Missing brand names
+# - Equivalent brands across countries
 def sync_translation_data(term: str):
     with driver.session() as session:
         #print(f"Checking term: {term}\n")
@@ -173,7 +178,8 @@ def sync_translation_data(term: str):
         for e in equivalents:
             print(f" - {e['brand']} ({e['country']} / {e['country_name']})")
 
-# Loads language packs 
+# Loads a language pack from a JSON file into Neo4j
+# Supports bulk insertion of translations and optional brands
 def load_language_pack(path_to_json):
     with open(path_to_json, "r") as file:
         pack = json.load(file)

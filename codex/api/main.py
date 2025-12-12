@@ -1,17 +1,23 @@
 # Import dependencies                                                             
-from codex.services.translation_service import load_demo_data, translate, sync_translation_data, load_language_pack, language_exists
-from codex.neo4j_driver import find_missing_translations, find_missing_brands, get_equivalent_brands, resolve_to_base_term, driver
+from codex.services.translation_service import translate, sync_translation_data, load_language_pack, language_exists
+from codex.neo4j_driver import resolve_to_base_term, driver
 
-# Testing data
-# print("\nLoading data")
-# load_demo_data()
+"""
+CLI Test Harness for Codex Translation System
 
-# All for testing purposes
+This script is used for manual testing and validation of the Codex medical
+translation pipeline. It allows developers to:
+- Enter medical terms interactively
+- Test language and country-based translations
+- Verify fallback behavior
+- Load language packs dynamically
+- Run full data-quality analysis on translated terms
+
+This file is NOT part of the production API or UI.
+It is intended strictly for development and testing purposes.
+"""
 
 no_translation_flag = False
-
-
-
 
 while True:
     term = input("\nEnter a medical term (or 'exit'): ")
@@ -32,6 +38,7 @@ while True:
             pack_path = input("Enter path to JSON language pack: ")
             try:
                 print(load_language_pack(pack_path))
+                break
             except Exception as e:
                 print(f"Failed to load language pack: {e}")
                 continue
@@ -44,7 +51,7 @@ while True:
                 print("\nCannot translate without a valid language or fallback.")
                 continue
     
-    # Translation
+    
     print("\n--Translation Results--")
     results = translate(term, lang=lang, country=country)
 
