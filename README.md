@@ -73,14 +73,30 @@ Local Setup (Step-by-Step)
    - running on python3.11.xx here
 
 7. Project Structure:
-   - codex-translation-api/
-     - main.py # CLI for testing
-     - streamlit_app.py # GUI/front end for our demo
-     - neo4j_driver.py # Neo4j connection logic
-     - requirements.txt # Python dependencies
-     - .env (ignored) # Local database credentials
+   - codex/
+     - api/
+       - __init__.py
+       - main.py           # CLI for testing
+     - config/
+       - fallbacks.json    # Language fallback rules
+     - language_packs/
+       - english_pack.json
+       - french_pack.json
+       - russian_pack.json
+       - spanish_pack.json
+       - ukrainian_pack.json
+     - services/
+       - __init__.py
+       - translation_service.py  # Core translation + fallback logic
+     - utils/
+       - __init__.py             # Shared utilities (reserved for expansion)
+     - neo4j_driver.py           # Neo4j connection and Cypher queries
+    
+     - .env     # Local credientials (ignored)
      - venv/ # Virtual enviornment
      - README.md # Setting up environment
+     - streamlit_app.py          # Streamlit frontend (demo UI)
+     - requirments.txt           # Python dependencies
        
 ---
 
