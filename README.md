@@ -1,23 +1,33 @@
-# Codex Translation API
+# Codex Translation System
 
-This is the backend API for "Project Codex", a medical terminology translation tool built with "Neo4j" and a python driver.
+Codex is a medical terminology translation system developed as part of Project Codex.
+It uses a Neo4j graph database to translate medical terms across languages while preserving a canonical medical concept for consistent analysis.
 
-This app allows patients and doctors to translate medical terms offline, or online, using a local Neo4j database.
+The system supports:
+- Fuzzy matching for misspelled terms
+- Language fallback logic
+- Brand and country-specific translations
+- Data quality analysis (missing translations, brands, equivalents)
+  
+Codex can be run locally using a CLI or a Streamlit web interface.
 
 ---
 
 Features
 
-- Translate medical terminology between multiple languages
-- Neo4j graph database for terms, languages, and relationships
-- Simple local environment setup
+- Multilingual medical term translation
+- Canonical term resolution using fuzzy matching
+- Neo4j graph model for terms, languages, countries, and brands
+- Language fallback logic (configurable)
+- Full analysis on translated terms
+- Streamlit-based frontend for demos
+- CLI toold for development and testing
 
 ---
 
 Requirements
 
 Have the following installed:
-
 - Python 3.10
 - Virtual enviornment (venv)
 - Neo4j Desktop
@@ -71,3 +81,11 @@ Local Setup (Step-by-Step)
      - .env (ignored) # Local database credentials
      - venv/ # Virtual enviornment
      - README.md # Setting up environment
+       
+---
+
+Notes
+- The system always resolves user input to a canonical medical term
+- Translated terms are used as entry points, not database keys
+- Designed for offline or local-first usage
+- Intended for academic and demonstration purposes
