@@ -38,9 +38,8 @@ Have the following installed:
 Local Setup (Step-by-Step)
 
 1. Clone the Repo
-
-   - git clone https://github.com/YourUsername/codex-translation-api.git
-   - cd codex-transaltion-api
+   - git clone https://github.com/YourUsername/medical-codex-backend.git
+   - cd medical-codex-backend
 
 2. Create and Activate Virtual Enviornment
 
